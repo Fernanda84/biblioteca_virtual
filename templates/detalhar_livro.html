@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Detalhar livro: {{ livro.titulo }}{% endblock title %}
+
+{% block menu %}{% endblock menu %}
+
+{% block content %}
+<section class="vh-80">
+    <div class="container-fluid h-custom" id="login">
+      <div class="row d-flex justify-content-center align-items-center m-3 p-3 h-100">
+        <div class="p-5 m-5 p-md-4">
+            <div class="container text-start">
+                <h4 class="bg-laranja"><span><a href="{{ request.META.HTTP_REFERER }}"><i class="fas fa-arrow-left mx-2" style="color: #FF914D;"></i></a></span>Conferir detalhes</h4>
+              </div>
+              {% include "partials/_card_livro.html" %}
+        </div>
+      </div>
+    </div>
+</section>
+{% endblock content %}
