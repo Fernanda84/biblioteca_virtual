@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, permission_required, user_passes_test
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout, get_user_model
-from django.http import HttpResponseRedirect  # REMOVIDO: JsonResponse daqui
+from django.http import HttpResponseRedirect  
 from django.urls import reverse
 from django.contrib import messages
 from django.contrib.messages import get_messages
@@ -452,3 +452,71 @@ def toggle_usuario_status(request, id_usuario):
         messages.success(request, f'Usuário {usuario.username} {status} com sucesso!')
     else:
         messages.error(request, 'Você não pode alterar seu próprio status')
+    return HttpResponseRedirect(reverse('gerenciar_usuarios'))
+
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+def promover_usuario(request, id_usuario):
+    usuario = get_object_or_404(User, pk=id_usuario)
+    
+    if usuario != request.user:
+        usuario.is_staff = True
+        usuario.save()
+        messages.success(request, f'Usuário {usuario.username} promovido a administrador!')
+    else:
+        messages.error(request, 'Ação não permitida.')
+    
+    return HttpResponseRedirect(reverse('gerenciar_usuarios'))
+
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+def rebaixar_usuario(request, id_usuario):
+    usuario = get_object_or_404(User, pk=id_usuario)
+    
+    if usuario != request.user:
+        usuario.is_staff = False
+        usuario.save()
+        messages.success(request, f'Usuário {usuario.username} rebaixado a usuário regular.')
+    else:
+        messages.error(request, 'Você não pode rebaixar a si mesmo!')
+    
+    return HttpResponseRedirect(reverse('gerenciar_usuarios'))
+
+@login_required
+def perfil_usuario(request):
+    usuario = request.user
+    
+    if request.method == "POST":
+        form = UserEditForm(request.POST, instance=usuario)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Perfil atualizado com sucesso!')
+            return redirect('perfil_usuario')
+        else:
+            messages.error(request, 'Erro ao atualizar perfil.')
+    else:
+        # Remova campos is_staff e is_active para usuários comuns
+        if not usuario.is_staff:
+            form = UserEditForm(instance=usuario)
+            # Remover campos administrativos
+            form.fields.pop('is_staff', None)
+            form.fields.pop('is_active', None)
+        else:
+            form = UserEditForm(instance=usuario)
+    
+    # Pegar estatísticas do usuário
+    emprestimos = Emprestimo.objects.filter(usuario=usuario)
+    total_emprestimos = emprestimos.count()
+    emprestimos_ativos = emprestimos.filter(devolvido=False).count()
+    
+    return render(request, "perfil_usuario.html", {
+        "form": form,
+        "total_emprestimos": total_emprestimos,
+        "emprestimos_ativos": emprestimos_ativos,
+    })
+
+# ============ UTILITÁRIOS ============
+
+def ajax_mensagens(request):
+    messages = get_messages(request)
+    return render(request, 'partials/_messages.html', {'messages': messages})
