@@ -26,11 +26,9 @@ def cadastro(request):
         if form.is_valid():
             try:
                 user = form.save(commit=False)
-                # Configurar o email e nome do usuário
                 user.email = form.cleaned_data.get('email')
                 user.save()
                 
-                # Atualizar os campos adicionais no modelo User
                 user.nome = form.cleaned_data.get('nome')
                 user.telefone = form.cleaned_data.get('telefone')
                 user.save()
@@ -77,44 +75,38 @@ def logout_view(request):
 
 @login_required
 def inicio(request):
-    livros_list = Livro.objects.all().order_by("titulo")
-    pesquisa = request.GET.get("q")
-    if pesquisa:
-        livros_list = Livro.objects.filter(
-            Q(autor__icontains=pesquisa) |
-            Q(titulo__icontains=pesquisa) |
-            Q(sinopse__icontains=pesquisa) |
-            Q(genero__icontains=pesquisa) |
-            Q(editora__name__icontains=pesquisa)
-        ).distinct()
+    termo_busca = request.GET.get('campo_pesquisa') # Altere para o 'name' do seu <input>
+    livros = Livro.objects.all()
 
-    # Verificar disponibilidade
-    for livro in livros_list:
-        livro.disponivel = livro.esta_disponivel()
+    if termo_busca:
+        termo_busca = termo_busca.strip()
+        
+        siglas_generos_encontrados = []
+        for sigla, nome_extenso in Livro.GENEROS.items():
+            if termo_busca.lower() in nome_extenso.lower():
+                siglas_generos_encontrados.append(sigla)
 
-    paginator = Paginator(livros_list, 9)
-    page_number = request.GET.get('page')
-    livros_paginados = paginator.get_page(page_number)
-    
-    generos = Livro.GENEROS
-    
-    return render(request, 'inicio.html', {
-        'livros_paginados': livros_paginados,
-        'generos': generos.items(),
-    })
+        livros = Livro.objects.filter(
+            Q(titulo__icontains=termo_busca) |      
+            Q(autor__icontains=termo_busca) |        
+            Q(genero__in=siglas_generos_encontrados) 
+        )
 
-# ROTA AJAX: Retorna HTML puro vindo de um arquivo parcial do Django
+    return render(request, 'inicio.html', {'livros': livros})
+
 def ajax_livros(request):
-    time.sleep(2)
-    livros_list = Livro.objects.all().order_by("titulo")
+    time.sleep(2) 
+    
+    livros_list = Livro.objects.all().select_related('autor', 'editora').order_by("titulo")
+    
     pesquisa = request.GET.get("q")
     if pesquisa:
         livros_list = Livro.objects.filter(
-            Q(autor__icontains=pesquisa) |
+            Q(autor__icontains=pesquisa) |  
             Q(titulo__icontains=pesquisa) |
             Q(sinopse__icontains=pesquisa) |
             Q(genero__icontains=pesquisa) |
-            Q(editora__name__icontains=pesquisa)
+            Q(editora__icontains=pesquisa)
         ).distinct()
     
     for livro in livros_list:
@@ -123,6 +115,7 @@ def ajax_livros(request):
     paginator = Paginator(livros_list, 9)
     page_number = request.GET.get('page')
     livros_paginados = paginator.get_page(page_number)
+    
     return render(request, "partials/_livros_grid.html", {'livros_paginados': livros_paginados})
 
 @login_required
@@ -131,14 +124,12 @@ def detalhar_livro(request, id_livro):
     livro.disponivel = livro.esta_disponivel()
     return render(request, "detalhar_livro.html", {"livro": libro})
 
-# ROTA AJAX: Retorna HTML do card renderizado, sem usar JSON
 @login_required
 def ajax_detalhar_livro(request, id_livro):
     livro = get_object_or_404(Livro, pk=id_livro)
     livro.disponivel = livro.esta_disponivel()
     return render(request, "partials/_card_livro.html", {"livro": livro})
 
-# ============ CRUD LIVROS ============
 
 @login_required
 @user_passes_test(lambda u: u.is_staff)
@@ -214,7 +205,6 @@ def gerenciar_livros(request):
     }
     return render(request, "gerenciar_livros.html", context)
 
-# ============ CRUD EMPRÉSTIMOS ============
 
 @login_required
 @user_passes_test(lambda u: u.is_staff)
@@ -342,7 +332,6 @@ def renovar_emprestimo(request, id_emprestimo):
     
     return HttpResponseRedirect(reverse('gerenciar_emprestimos'))
 
-# ============ VISUALIZAÇÃO DO USUÁRIO ============
 
 @login_required
 def ver_emprestimos(request):
@@ -381,7 +370,6 @@ def renovar_meu_emprestimo(request, id_emprestimo):
     
     return HttpResponseRedirect(reverse('ver_emprestimos'))
 
-# ============ CRUD USUÁRIOS ============
 
 @login_required
 @user_passes_test(lambda u: u.is_staff)
@@ -495,16 +483,14 @@ def perfil_usuario(request):
         else:
             messages.error(request, 'Erro ao atualizar perfil.')
     else:
-        # Remova campos is_staff e is_active para usuários comuns
+        
         if not usuario.is_staff:
             form = UserEditForm(instance=usuario)
-            # Remover campos administrativos
             form.fields.pop('is_staff', None)
             form.fields.pop('is_active', None)
         else:
             form = UserEditForm(instance=usuario)
     
-    # Pegar estatísticas do usuário
     emprestimos = Emprestimo.objects.filter(usuario=usuario)
     total_emprestimos = emprestimos.count()
     emprestimos_ativos = emprestimos.filter(devolvido=False).count()
@@ -515,7 +501,6 @@ def perfil_usuario(request):
         "emprestimos_ativos": emprestimos_ativos,
     })
 
-# ============ UTILITÁRIOS ============
 
 def ajax_mensagens(request):
     messages = get_messages(request)
