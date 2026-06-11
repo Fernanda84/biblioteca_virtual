@@ -31,7 +31,7 @@
         <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
           <div class="card-body p-4">
             <div class="text-center mb-3">
-              <h5 class="fw-bold mb-0" style="color: #172155;">
+              <h5 class="fw-bold mb-0" style="color: #080b1b;">
                 <i class="fas fa-search me-2"></i>Buscar Livros no Acervo
               </h5>
               <p class="text-muted mb-0">Pesquise por título, autor, editora ou gênero</p>
@@ -150,7 +150,7 @@
           
           <!-- Book Info -->
           <div class="card-body">
-            <h5 class="card-title fw-bold mb-2 text-truncate" style="color: #172155;">
+            <h5 class="card-title fw-bold mb-2 text-truncate" style="color: #080b1b;">
               {{ livro.titulo }}
             </h5>
             <p class="card-text text-muted mb-2">
@@ -274,7 +274,7 @@
                              alt="Capa" 
                              style="width: 50px; height: 70px; object-fit: cover;">
                         {% else %}
-                        <div class="book-icon me-3" style="color: #172155;">
+                        <div class="book-icon me-3" style="color: #080b1b;">
                           <i class="fas fa-book fa-lg"></i>
                         </div>
                         {% endif %}
@@ -346,7 +346,7 @@
             {% if livros_paginados.has_previous %}
             <li class="page-item">
               <a class="page-link" href="?{% if request.GET.q %}q={{ request.GET.q }}&{% endif %}{% if request.GET.genero %}genero={{ request.GET.genero }}&{% endif %}{% if request.GET.disponivel %}disponivel={{ request.GET.disponivel }}&{% endif %}{% if request.GET.order %}order={{ request.GET.order }}&{% endif %}page={{ livros_paginados.previous_page_number }}" 
-                 style="color: #172155;">
+                 style="color: #080b1b;">
                 <i class="fas fa-chevron-left"></i>
               </a>
             </li>
@@ -368,7 +368,7 @@
               {% elif num > livros_paginados.number|add:'-3' and num < livros_paginados.number|add:'3' %}
               <li class="page-item">
                 <a class="page-link" href="?{% if request.GET.q %}q={{ request.GET.q }}&{% endif %}{% if request.GET.genero %}genero={{ request.GET.genero }}&{% endif %}{% if request.GET.disponivel %}disponivel={{ request.GET.disponivel }}&{% endif %}{% if request.GET.order %}order={{ request.GET.order }}&{% endif %}page={{ num }}" 
-                   style="color: #172155;">
+                   style="color: #080b1b;">
                   {{ num }}
                 </a>
               </li>
@@ -378,7 +378,7 @@
             {% if livros_paginados.has_next %}
             <li class="page-item">
               <a class="page-link" href="?{% if request.GET.q %}q={{ request.GET.q }}&{% endif %}{% if request.GET.genero %}genero={{ request.GET.genero }}&{% endif %}{% if request.GET.disponivel %}disponivel={{ request.GET.disponivel }}&{% endif %}{% if request.GET.order %}order={{ request.GET.order }}&{% endif %}page={{ livros_paginados.next_page_number }}" 
-                 style="color: #172155;">
+                 style="color: #080b1b;">
                 <i class="fas fa-chevron-right"></i>
               </a>
             </li>
