@@ -110,24 +110,30 @@ class Livro(models.Model):
         return ', '.join([e.editora for e in self.editora.all()])
     
 class Emprestimo(models.Model):
-    usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE)
-    livro = models.ManyToManyField(Livro)
-    data = models.DateField(auto_now_add=True)
-    data_devolucao = models.DateField(blank=True, null=True)
-    devolvido = models.BooleanField(default=False)
+    usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE, verbose_name="Usuário")
+    livro = models.ForeignKey(Livro, on_delete=models.CASCADE, verbose_name="Livro") # <-- Correção
+    data = models.DateField(auto_now_add=True, verbose_name="Data do Empréstimo")
+    data_devolucao = models.DateField(blank=True, null=True, verbose_name="Data Prevista de Devolução")
+    devolvido = models.BooleanField(default=False, verbose_name="Devolvido?")
     
+    class Meta:
+        verbose_name = "Empréstimo"
+        verbose_name_plural = "Empréstimos"
+        ordering = ['-data'] 
+
     def __str__(self):
-        livros = ', '.join([livro.titulo for livro in self.livro.all()[:3]])
-        if self.livro.count() > 3:
-            livros += f'... (+{self.livro.count() - 3})'
-        return f'{self.usuario.username} | {livros} | {self.data}'
+        return f'{self.usuario.username} | {self.livro.titulo} | {self.data}'
     
     def save(self, *args, **kwargs):
-        """Define data_devolucao padrão se não for fornecida"""
+        """Define data_devolucao padrão e valida se há cópias disponíveis"""
         if not self.data_devolucao:
             self.data_devolucao = date.today() + timedelta(days=15)
+            
+        if not self.pk and not self.livro.esta_disponivel():
+            raise forms.ValidationError(f'Não há cópias disponíveis do livro "{self.livro.titulo}" para empréstimo.')
+
         super().save(*args, **kwargs)
-    
+        
     def esta_atrasado(self):
         """Verifica se o empréstimo está atrasado"""
         if self.devolvido:

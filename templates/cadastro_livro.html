@@ -255,8 +255,7 @@
                   </div>
                 </div>
               </div>
-              
-              <!-- Additional Information -->
+          <!-- Additional Information -->
               <div class="card mt-4 border-0 shadow-sm" style="background-color: rgba(255, 145, 77, 0.05);">
                 <div class="card-body">
                   <h6 class="fw-bold mb-3" style="color: #080b1b;">
@@ -268,13 +267,10 @@
                         <label class="form-label fw-bold mb-2" style="color: #080b1b;">
                           <i class="fas fa-language me-2"></i>Idioma
                         </label>
-                        <select class="form-select" name="idioma">
-                          <option value="">Selecione...</option>
-                          <option value="pt">Português</option>
-                          <option value="en">Inglês</option>
-                          <option value="es">Espanhol</option>
-                          <option value="fr">Francês</option>
-                        </select>
+                        {{ form.idioma }}
+                        {% if form.idioma.errors %}
+                          <div class="invalid-feedback d-block">{{ form.idioma.errors.0 }}</div>
+                        {% endif %}
                       </div>
                     </div>
                     <div class="col-md-4">
@@ -282,7 +278,10 @@
                         <label class="form-label fw-bold mb-2" style="color: #080b1b;">
                           <i class="fas fa-ruler-combined me-2"></i>Número de Páginas
                         </label>
-                        <input type="number" class="form-control" name="paginas" min="1" placeholder="Ex: 250">
+                        {{ form.paginas }}
+                        {% if form.paginas.errors %}
+                          <div class="invalid-feedback d-block">{{ form.paginas.errors.0 }}</div>
+                        {% endif %}
                       </div>
                     </div>
                     <div class="col-md-4">
@@ -290,13 +289,16 @@
                         <label class="form-label fw-bold mb-2" style="color: #080b1b;">
                           <i class="fas fa-box me-2"></i>Quantidade em Estoque
                         </label>
-                        <input type="number" class="form-control" name="quantidade" min="1" value="1" required>
-                      </div>
+                        {{ form.quantidade }}
+                        {% if form.quantidade.errors %}
+                          <div class="invalid-feedback d-block">{{ form.quantidade.errors.0 }}</div>
+                        {% endif %}
+        0             </div>
                     </div>
                   </div>
                 </div>
               </div>
-              
+
               <!-- Submit Buttons -->
               <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
                 <a href="{{ request.META.HTTP_REFERER|default:'{% url "gerenciar_livros" %}' }}" 
