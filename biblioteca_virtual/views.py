@@ -8,7 +8,7 @@ from django.contrib.messages import get_messages
 from django.contrib.auth.forms import AuthenticationForm
 from django.core.paginator import Paginator
 from .models import Livro, Emprestimo
-from .forms import LivroForm, EmprestimoForm, CustomUserCreationForm, UserEditForm
+from .forms import LivroForm, EmprestimoForm, CadastroForm, UserEditForm
 from django.db.models import Q, Count
 from datetime import date, timedelta
 import time 
@@ -21,28 +21,15 @@ def index(request):
     return render(request, "index.html")
 
 def cadastro(request):
-    if request.method == "POST":
-        form = CustomUserCreationForm(request.POST)
+    if request.method == 'POST':
+        form = CadastroForm(request.POST)
         if form.is_valid():
-            try:
-                user = form.save(commit=False)
-                user.email = form.cleaned_data.get('email')
-                user.save()
-                
-                user.nome = form.cleaned_data.get('nome')
-                user.telefone = form.cleaned_data.get('telefone')
-                user.save()
-                
-                messages.success(request, f"Usuário {user.username} criado com sucesso! Faça login para acessar o sistema.")
-                return redirect('login')
-            except Exception as e:
-                messages.error(request, f"Erro ao criar usuário: {str(e)}")
-        else:
-            messages.error(request, "Por favor, corrija os erros abaixo.")
+            form.save()
+            return redirect('login') 
     else:
-        form = CustomUserCreationForm()
-    return render(request, "registration/cadastro.html", {"form": form})
-
+        form = CadastroForm()
+    
+    return render(request, 'registration/cadastro.html', {'form': form})
 def login_view(request):
     if request.user.is_authenticated:
         return redirect('inicio')

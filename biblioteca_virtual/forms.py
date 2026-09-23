@@ -7,46 +7,28 @@ from datetime import date, timedelta
 
 User = get_user_model()
 
-class CustomUserCreationForm(UserCreationForm):
-    nome = forms.CharField(max_length=100, required=True, label='Nome Completo')
-    email = forms.EmailField(required=True, label='Email')
-    telefone = forms.CharField(max_length=14, required=True, label='Telefone')
-    
+class CadastroForm(forms.ModelForm):
+    username = forms.CharField(
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Usuário'})
+    )
+    email = forms.EmailField(
+        required=False, 
+        widget=forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'E-mail'})
+    )
+    password = forms.CharField(
+        widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Senha'})
+    )
+
     class Meta:
         model = User
-        fields = ['username', 'nome', 'email', 'telefone', 'password1', 'password2']
-    
+        fields = ['username', 'email', 'password']
+
     def save(self, commit=True):
         user = super().save(commit=False)
-        user.email = self.cleaned_data['email']
+        user.set_password(self.cleaned_data["password"])
         if commit:
             user.save()
         return user
-
-class UserEditForm(forms.ModelForm):
-    class Meta:
-        model = User
-        fields = ['username', 'email', 'nome', 'telefone', 'is_active', 'is_staff']
-    
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        if not self.instance.is_staff:
-            self.fields.pop('is_staff', None)
-            self.fields.pop('is_active', None)
-
-class CustomAuthenticationForm(AuthenticationForm):
-    username = forms.CharField(
-        widget=forms.TextInput(attrs={
-            'class': 'form-control',
-            'placeholder': 'Nome de usuário'
-        })
-    )
-    password = forms.CharField(
-        widget=forms.PasswordInput(attrs={
-            'class': 'form-control',
-            'placeholder': 'Senha'
-        })
-    )
 
 class EditoraForm(forms.ModelForm):
     class Meta:
@@ -199,12 +181,11 @@ class EmprestimoForm(forms.ModelForm):
 class UserEditForm(forms.ModelForm):
     class Meta:
         model = User
-        fields = ['username', 'email', 'nome', 'telefone', 'is_active', 'is_staff']
+        fields = ['username', 'first_name', 'email', 'is_active', 'is_staff']
         widgets = {
             'username': forms.TextInput(attrs={'class': 'form-control'}),
+            'first_name': forms.TextInput(attrs={'class': 'form-control'}),
             'email': forms.EmailInput(attrs={'class': 'form-control'}),
-            'nome': forms.TextInput(attrs={'class': 'form-control'}),
-            'telefone': forms.TextInput(attrs={'class': 'form-control'}),
             'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'is_staff': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
@@ -213,8 +194,8 @@ class UserEditForm(forms.ModelForm):
         email = self.cleaned_data.get('email')
         user_id = self.instance.id if self.instance else None
         
-        if User.objects.filter(email=email).exclude(id=user_id).exists():
-            raise ValidationError("Este email já está cadastrado.")
+        if email and User.objects.filter(email=email).exclude(id=user_id).exists():
+            raise ValidationError("Este e-mail já está cadastrado.")
         return email
 
 class FiltroLivrosForm(forms.Form):
