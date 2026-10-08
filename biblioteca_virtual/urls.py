@@ -22,6 +22,7 @@ urlpatterns = [
     
     # CRUD Livros
     path('livros/cadastrar/', views.cadastro_livro, name='cadastro_livro'),
+    path('livros/', views.lista_livros, name='lista_livros'),
     path('livros/editar/<int:id_livro>/', views.editar_livro, name='editar_livro'),
     path('livros/deletar/<int:id_livro>/', views.deletar_livro, name='deletar_livro'),
     path('livros/gerenciar/', views.gerenciar_livros, name='gerenciar_livros'),

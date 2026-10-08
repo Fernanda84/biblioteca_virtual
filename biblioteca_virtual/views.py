@@ -8,7 +8,7 @@ from django.contrib.messages import get_messages
 from django.contrib.auth.forms import AuthenticationForm
 from django.core.paginator import Paginator
 from .models import Livro, Emprestimo
-from .forms import LivroForm, EmprestimoForm, CustomUserCreationForm, UserEditForm
+from .forms import LivroForm, EmprestimoForm, CadastroForm, UserEditForm
 from django.db.models import Q, Count
 from datetime import date, timedelta
 import time 
@@ -21,28 +21,15 @@ def index(request):
     return render(request, "index.html")
 
 def cadastro(request):
-    if request.method == "POST":
-        form = CustomUserCreationForm(request.POST)
+    if request.method == 'POST':
+        form = CadastroForm(request.POST)
         if form.is_valid():
-            try:
-                user = form.save(commit=False)
-                user.email = form.cleaned_data.get('email')
-                user.save()
-                
-                user.nome = form.cleaned_data.get('nome')
-                user.telefone = form.cleaned_data.get('telefone')
-                user.save()
-                
-                messages.success(request, f"Usuário {user.username} criado com sucesso! Faça login para acessar o sistema.")
-                return redirect('login')
-            except Exception as e:
-                messages.error(request, f"Erro ao criar usuário: {str(e)}")
-        else:
-            messages.error(request, "Por favor, corrija os erros abaixo.")
+            form.save()
+            return redirect('login') 
     else:
-        form = CustomUserCreationForm()
-    return render(request, "registration/cadastro.html", {"form": form})
-
+        form = CadastroForm()
+    
+    return render(request, 'registration/cadastro.html', {'form': form})
 def login_view(request):
     if request.user.is_authenticated:
         return redirect('inicio')
@@ -50,32 +37,30 @@ def login_view(request):
     if request.method == "POST":
         form = AuthenticationForm(request, data=request.POST)
         if form.is_valid():
-            username = form.cleaned_data.get('username')
-            password = form.cleaned_data.get('password')
-            user = authenticate(request, username=username, password=password)
-            if user is not None:
-                if user.is_active:
-                    auth_login(request, user)
-                    messages.success(request, f"Bem-vindo, {user.nome or user.username}!")
-                    return redirect('inicio')
-                else:
-                    messages.error(request, "Esta conta está desativada.")
-            else:
-                messages.error(request, "Usuário ou senha incorretos.")
+            user = form.get_user()
+            auth_login(request, user)
+            
+            nome_exibicao = getattr(user, 'nome', None) or user.get_full_name() or user.username
+            messages.success(request, f"Bem-vindo, {nome_exibicao}!")
+            
+            next_url = request.GET.get('next', 'inicio')
+            return redirect(next_url)
         else:
             messages.error(request, "Usuário ou senha incorretos.")
     else:
         form = AuthenticationForm()
+
     return render(request, "registration/login.html", {"form": form})
+
 
 def logout_view(request):
     auth_logout(request)
-    messages.success(request, "Você saiu do sistema.")
+    messages.success(request, "Você saiu do sistema com sucesso.")
     return redirect('index')
 
 @login_required
 def inicio(request):
-    termo_busca = request.GET.get('campo_pesquisa') # Altere para o 'name' do seu <input>
+    termo_busca = request.GET.get('campo_pesquisa') 
     livros = Livro.objects.all()
 
     if termo_busca:
@@ -147,22 +132,23 @@ def cadastro_livro(request):
         form = LivroForm()
     return render(request, 'cadastro_livro.html', {'form': form})
 
+def lista_livros(request):
+    livros = Livro.objects.all() 
+    return render(request, 'seu_template.html', {'livros': livros})
+
 @login_required
 @user_passes_test(lambda u: u.is_staff)
 def editar_livro(request, id_livro):
-    livro = get_object_or_404(Livro, pk=id_livro)
-    if request.method == "POST":
+    livro = get_object_or_404(Livro, id=id_livro)
+    
+    if request.method == 'POST':
         form = LivroForm(request.POST, request.FILES, instance=livro)
         if form.is_valid():
-            livro = form.save()
-            form.save_m2m()
-            messages.success(request, f'Livro "{livro.titulo}" atualizado com sucesso!')
-            return redirect("gerenciar_livros")
-        else:
-            messages.error(request, "Falha ao atualizar livro!")
+            form.save()
+            return redirect('lista_livros')
     else:
         form = LivroForm(instance=livro)
-    return render(request, "editar_livro.html", {"form": form, "livro": livro})
+    return render(request, 'editar_livro.html', {'form': form, 'livro': livro})
 
 @login_required
 @user_passes_test(lambda u: u.is_staff)
@@ -359,7 +345,7 @@ def renovar_meu_emprestimo(request, id_emprestimo):
     emprestimo = get_object_or_404(Emprestimo, pk=id_emprestimo, usuario=request.user)
     
     if not emprestimo.devolvido and emprestimo.data_devolucao:
-        if not append.esta_atrasado():
+        if not emprestimo.esta_atrasado():
             emprestimo.data_devolucao += timedelta(days=7)
             emprestimo.save()
             messages.success(request, 'Empréstimo renovado por mais 7 dias!')

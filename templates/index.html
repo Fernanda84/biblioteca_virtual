@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% load static crispy_forms_filters %}
-
+{% load static %}
 {% block menu %}
 {% endblock menu %}
 
@@ -22,7 +22,7 @@
         </div>
       </div>
       <div class="col-lg-6 text-center">
-        <img src="{% static './img/logo.png' %}" alt="logo" class="img-fluid" style="max-width: 300px; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.3));">
+        <img src="{% static 'logo1.png' %}" alt="Logo" class="img-fluid mb-3" style="width: 900px; height: 500px; filter: brightness(0) invert(1);">
       </div>
     </div>
   </div>
