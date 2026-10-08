@@ -82,7 +82,7 @@ def inicio(request):
 def ajax_livros(request):
     time.sleep(2) 
     
-    livros_list = Livro.objects.all().select_related('autor', 'editora').order_by("titulo")
+    livros_list = Livro.objects.all().order_by("titulo")
     
     pesquisa = request.GET.get("q")
     if pesquisa:
@@ -133,9 +133,27 @@ def cadastro_livro(request):
     return render(request, 'cadastro_livro.html', {'form': form})
 
 def lista_livros(request):
-    livros = Livro.objects.all() 
-    return render(request, 'seu_template.html', {'livros': livros})
+    livros = Livro.objects.all()
+    form = FiltroLivrosForm(request.GET)
 
+    if form.is_valid():
+        busca = form.cleaned_data.get('q')
+        genero = form.cleaned_data.get('genero')
+
+        if busca:
+            livros = livros.filter(
+                Q(titulo__icontains=busca) | Q(autor__icontains=busca)
+            )
+
+        if genero:
+            livros = livros.filter(genero=genero)
+
+    context = {
+        'livros': livros,
+        'form': form,
+    }
+    return render(request, 'biblioteca/lista_livros.html', context)
+    
 @login_required
 @user_passes_test(lambda u: u.is_staff)
 def editar_livro(request, id_livro):

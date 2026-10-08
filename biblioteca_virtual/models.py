@@ -2,6 +2,7 @@ from django import forms
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from datetime import date, timedelta
+from django.core.exceptions import ValidationError
 
 class Usuario(AbstractUser):
     nome = models.CharField(max_length=100)
@@ -82,9 +83,14 @@ class Livro(models.Model):
     isbn = models.CharField(max_length=13)
     publicacao = models.IntegerField(blank=True, null=True)
     classificacao = models.CharField(max_length=2, choices=CLASSIFICACOES)
-    genero = models.CharField(max_length=2, choices=GENEROS)
     sinopse = models.TextField(max_length=4000, blank=True, null=True)
     quantidade = models.IntegerField(default=1)
+    genero = models.CharField(
+        max_length=2, 
+        choices=GENEROS, 
+        blank=True, 
+        null=True
+    )
     
     def __str__(self):
         return self.titulo
@@ -125,12 +131,11 @@ class Emprestimo(models.Model):
         return f'{self.usuario.username} | {self.livro.titulo} | {self.data}'
     
     def save(self, *args, **kwargs):
-        """Define data_devolucao padrão e valida se há cópias disponíveis"""
         if not self.data_devolucao:
             self.data_devolucao = date.today() + timedelta(days=15)
             
         if not self.pk and not self.livro.esta_disponivel():
-            raise forms.ValidationError(f'Não há cópias disponíveis do livro "{self.livro.titulo}" para empréstimo.')
+            raise ValidationError(f'Não há cópias disponíveis do livro "{self.livro.titulo}" para empréstimo.')
 
         super().save(*args, **kwargs)
         
