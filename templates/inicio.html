@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
-
+{% include "_livros_grid.html" %}
 {% block menu %}
 {% endblock menu %}
 
@@ -26,36 +26,28 @@
     </div>
 
     <!-- Search Bar -->
-    <div class="row mb-5">
-      <div class="col-12">
-        <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
-          <div class="card-body p-4">
-            <div class="text-center mb-3">
-              <h5 class="fw-bold mb-0" style="color: #080b1b;">
-                <i class="fas fa-search me-2"></i>Buscar Livros no Acervo
-              </h5>
-              <p class="text-muted mb-0">Pesquise por título, autor ou editora</p>
-            </div>
-            
-            <form method="GET" action="{% url 'inicio' %}" id="searchForm" class="needs-validation" novalidate>
-              <div class="input-group input-group-lg shadow-sm">
-                <input type="text" 
-                      class="form-control border-0 rounded-start-4" 
-                      name="q" 
-                      placeholder="Digite título, autor, editora..." 
-                      value="{{ request.GET.q|default:'' }}"
-                      aria-label="Buscar livros">
-                <button class="btn rounded-end-4 border-0 shadow-sm fw-bold" 
-                        type="submit"
-                        style="background-color: #f3843e; color: white; width: 120px;">
-                  <i class="fas fa-search me-2"></i>Buscar
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+    <div class="row justify-content-center mb-4">
+  <div class="col-md-10">
+    <form method="GET" action="{% url 'inicio' %}" id="searchForm" class="needs-validation" novalidate>
+      <div class="input-group input-group-lg shadow-sm">
+        <input type="text" 
+               id="campo_pesquisa"
+               class="form-control border-0 rounded-start-4" 
+               name="q" 
+               placeholder="Digite o título, autor, gênero ou editora..." 
+               value="{{ request.GET.q|default:'' }}"
+               aria-label="Buscar livros"
+               autocomplete="off">
+
+        <button class="btn rounded-end-4 border-0 shadow-sm fw-bold" 
+                type="submit"
+                style="background-color: #f3843e; color: white; width: 120px;">
+          <i class="fas fa-search me-2"></i>Buscar
+        </button>
       </div>
-    </div>
+    </form>
+  </div>
+</div>
 
     <!-- Books Header & Toggle Controls -->
     <div class="row mb-4">
@@ -312,9 +304,9 @@
   <!-- seu_template.html -->
   <div class="row">
       {% for livro in livros %}
-          <div class="col-md-6 mb-4">
-            {% include 'partials/_card_livro.html' %} 
-          </div>
+        <div id="container-livros">
+          {% include "partials/_livros_grid.html" with livros_paginados=livros %}
+        </div>
       {% empty %}
           <p>Nenhum livro encontrado.</p>
       {% endfor %}
@@ -420,3 +412,49 @@
   });
 </script>
 {% endblock content %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const campoPesquisa = document.getElementById('campo_pesquisa');
+    const containerLivros = document.getElementById('container-livros');
+    let timeoutId = null;
+
+    if (campoPesquisa && containerLivros) {
+        campoPesquisa.addEventListener('input', function () {
+            const termo = this.value.trim();
+
+            // Debounce: Aguarda 300ms após o usuário parar de digitar para evitar requisições excessivas
+            clearTimeout(timeoutId);
+
+            timeoutId = setTimeout(() => {
+                // (Opcional) Efeito visual de carregamento
+                containerLivros.style.opacity = '0.5';
+
+                // Faz a requisição para a view ajax_livros
+                fetch(`/ajax/livros/?q=${encodeURIComponent(termo)}`, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Erro na requisição');
+                    }
+                    return response.text();
+                })
+                .then(html => {
+                    // Substitui o grid atual pelo partial recebido
+                    containerLivros.innerHTML = html;
+                    containerLivros.style.opacity = '1';
+                })
+                .catch(error => {
+                    console.error('Erro na busca AJAX:', error);
+                    containerLivros.style.opacity = '1';
+                });
+            }, 300); // tempo de espera do debounce
+        });
+    }
+});
+</script>
+{% endblock scripts %}

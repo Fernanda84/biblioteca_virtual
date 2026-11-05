@@ -1,0 +1,20 @@
+<div class="row">
+    {% for livro in livros_paginados %}
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <img src="{{ livro.capa.url }}" class="card-img-top" alt="{{ livro.titulo }}">
+                <div class="card-body">
+                    <h5 class="card-title">{{ livro.titulo }}</h5>
+                    <p class="card-text">{{ livro.autor }}</p>
+                    {% if livro.esta_disponivel %}
+                        <span class="badge bg-success">Disponível</span>
+                    {% else %}
+                        <span class="badge bg-danger">Emprestado</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    {% empty %}
+        <p class="text-muted">Nenhum livro encontrado.</p>
+    {% endfor %}
+</div>

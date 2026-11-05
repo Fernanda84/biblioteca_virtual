@@ -123,7 +123,6 @@ def cadastro_livro(request):
         form = LivroForm(request.POST, request.FILES)
         if form.is_valid():
             livro = form.save()
-            form.save_m2m()
             messages.success(request, f'Livro "{livro.titulo}" cadastrado com sucesso!')
             return redirect('gerenciar_livros')
         else:
